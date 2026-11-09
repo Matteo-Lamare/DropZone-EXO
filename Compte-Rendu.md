@@ -50,3 +50,33 @@ Cela dépend de la nature du changement :
 Par exemple, ajouter un bouton qui apporte une nouvelle fonctionnalité correspond à un `feat`. Corriger un bouton existant qui ne fonctionne pas correspond à un `fix`.
 
 Le versionnage sémantique suit le format `MAJOR.MINOR.PATCH`.
+
+## Partie 2
+
+### 1. Pourquoi copier les dépendances avant le code ?
+
+  Pour conserver le cache Docker des dépendances si seul le code change.
+
+### 2. Que contient l'image finale de l'API ?
+
+  Python, les dépendances runtime et le code de l'application. Pas les tests, le cache pip ni le .venv local.
+
+### 3. Pourquoi éviter root ?
+
+  Pour limiter les privilèges en cas de compromission du conteneur.
+
+### 4. Pourquoi Nginx écoute sur 8080 ?
+
+  Un utilisateur non privilégié peut écouter sur un port supérieur à 1024.
+
+### 5. Pourquoi db et pas localhost ?
+
+  Compose fournit un DNS interne : db désigne le conteneur PostgreSQL.
+
+### 6. Pourquoi attendre healthy ?
+  
+  Pour éviter de démarrer l'API avant que PostgreSQL accepte les connexions.
+
+### 7. Où sont les données ?
+
+  Dans le volume nommé postgres_data, conservé après docker compose down, mais supprimé avec docker compose down -v.
