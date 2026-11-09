@@ -80,3 +80,33 @@ Le versionnage sémantique suit le format `MAJOR.MINOR.PATCH`.
 ### 7. Où sont les données ?
 
   Dans le volume nommé postgres_data, conservé après docker compose down, mais supprimé avec docker compose down -v.
+
+## Partie 3
+
+### 1. Pourquoi séparer lint, tests et E2E en jobs distincts plutôt qu'un seul gros job ? Qu'est-ce qui tourne en parallèle ?
+
+  Pour mieux organiser les vérifications et repérer les erreurs plus facilement. Le lint, les tests backend et frontend tournent en parallèle. Les tests E2E démarrent seulement si les trois premiers réussissent.
+
+### 2. Pourquoi l'E2E en dernier ? Combien de temps gagne-t-on quand le lint échoue ?
+
+  Parce qu'ils prennent plus de temps et nécessitent Docker et un navigateur. Cela évite de perdre du temps si une vérification précédente échoue.
+
+### 3. Sur quel fichier se base la clé du cache ? Que se passe-t-il quand il change ?
+
+  Le cache utilise backend/requirements-dev.txt pour Python et frontend/package-lock.json pour Node.js. Si ces fichiers changent, les dépendances sont réinstallées et un nouveau cache est créé.
+
+### 4. De quels droits votre workflow a-t-il vraiment besoin ? Que pourrait faire un workflow compromis avec des droits en écriture ?
+
+  Pour sécuriser le dépôt. Le workflow possède uniquement le droit de lecture (contents: read). Cela limite les dégâts possibles si une action est compromise.
+
+### 5. Pour un test E2E : comment être sûr qu'il ne dépend pas des données d'un autre test ? (Le test peut créer son propre drop par l'API avant d'ouvrir la page.)
+
+  Chaque test crée son propre drop avec une requête API avant d'ouvrir la page. Il ne dépend donc pas des données déjà présentes.
+
+### 6. Quels tests unitaires font échouer la CI si quelqu'un casse la règle « jamais deux fois la dernière paire » ?
+
+  Les tests test_last_pair_cannot_be_sold_twice et test_order_rejected_if_drop_is_sold_out vérifient qu'une deuxième commande est refusée lorsque le stock est épuisé.
+
+### 7. Qu'est-ce qu'act ne sait pas reproduire de GitHub ?
+
+  act permet de tester les workflows localement, mais ne reproduit pas totalement GitHub : les secrets, les permissions, les runners et les règles de protection des branches peuvent être différents.
