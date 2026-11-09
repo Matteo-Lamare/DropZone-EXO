@@ -1,3 +1,5 @@
+[![CI](https://github.com/Matteo-Lamare/DropZone-EXO/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Matteo-Lamare/DropZone-EXO/actions/workflows/ci.yml)
+
 # DropZone
 
 **DropZone** est une plateforme de vente de sneakers en édition limitée. Chaque *drop* propose un nombre défini de paires, disponibles à une heure précise. Les commandes sont acceptées jusqu'à épuisement du stock.
