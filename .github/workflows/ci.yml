@@ -109,6 +109,18 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
+      # Exercise the same hash-routing and repository subpath configuration as GitHub Pages.
+      - name: Build GitHub Pages bundle
+        env:
+          VITE_ROUTER_MODE: hash
+          VITE_API_URL: ''
+        run: npm run build
+
+      - name: Verify GitHub Pages asset paths
+        run: |
+          grep -q 'href="/DropZone-EXO/favicon.svg"' dist/index.html
+          grep -q 'src="/DropZone-EXO/assets/' dist/index.html
+
   e2e:
     name: End-to-end tests
     runs-on: ubuntu-latest
