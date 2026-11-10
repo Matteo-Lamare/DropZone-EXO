@@ -256,6 +256,73 @@ L'application complète doit être accessible à cette adresse avant l'exécutio
 
 ---
 
+## Déploiement continu
+
+Le workflow `.github/workflows/cd.yml` se déclenche lorsqu'un tag Git commençant par `v` est poussé. Il publie les images de l'API et du frontend sur GHCR, déploie le frontend sur GitHub Pages, puis crée une Release avec des notes générées.
+
+### Configuration GitHub requise
+
+1. Dans **Settings → Pages**, sélectionner **GitHub Actions** comme *Build and deployment source*.
+2. Dans **Settings → Environments → github-pages**, autoriser les déploiements déclenchés par les tags `v*` (ou supprimer la restriction de branches/tags si le dépôt ne permet pas une règle plus précise).
+3. Dans **Settings → Secrets and variables → Actions → Variables**, créer la variable `PUBLIC_API_URL` avec l'URL HTTPS publique de l'API, sans slash final. Si elle n'est pas définie, le site affiche que l'API est injoignable.
+4. Dans **Packages**, régler la visibilité de `dropzone-api` et `dropzone-front` sur **Public** pour permettre le pull sans authentification.
+
+Le dépôt doit être public pour utiliser GitHub Pages avec GitHub Free. L'URL du site de ce dépôt est :
+
+`https://matteo-lamare.github.io/DropZone-EXO/`
+
+Le frontend Pages est compilé avec une base `/DropZone-EXO/` et un routeur à fragments (`/#/drops/3`). Le fragment évite une erreur 404 lors du rechargement d'une page interne sur l'hébergement statique. Contrairement à la stack Docker, Pages ne dispose pas du proxy Nginx `/api` : `PUBLIC_API_URL` doit donc pointer vers une API publique configurée pour autoriser l'origine `https://matteo-lamare.github.io` dans `CORS_ORIGINS`.
+
+### Lancer les images publiées
+
+Le fichier `compose.prod.yml` utilise les images GHCR. La version est pilotée par `DROPZONE_VERSION` et aucune compilation locale n'est nécessaire.
+
+Sous Windows PowerShell :
+
+```powershell
+$env:DROPZONE_VERSION = "0.4.0"
+docker compose -f compose.prod.yml pull
+docker compose -f compose.prod.yml up -d
+docker compose -f compose.prod.yml ps
+```
+
+Sous Linux/macOS :
+
+```bash
+DROPZONE_VERSION=0.4.0 docker compose -f compose.prod.yml pull
+DROPZONE_VERSION=0.4.0 docker compose -f compose.prod.yml up -d
+docker compose -f compose.prod.yml ps
+```
+
+L'interface locale est disponible sur `http://localhost:8080`. Les identifiants PostgreSQL peuvent être personnalisés avec les variables Compose documentées dans `compose.prod.yml` ; ne pas utiliser les valeurs par défaut en production.
+
+### Publier une version et effectuer un rollback
+
+Le tag doit désigner un commit de `main` dont les contrôles CI ont réussi. La protection de `main` et les status checks obligatoires garantissent que seuls les commits validés sont fusionnés ; le CD ne relance donc pas les mêmes tests.
+
+Exemple de cycle de publication :
+
+```bash
+git checkout main
+git pull origin main
+git tag -a v0.4.0 -m "Release v0.4.0"
+git push origin v0.4.0
+# Après validation de la Release et des deux packages :
+git tag -a v0.5.0 -m "Release v0.5.0"
+git push origin v0.5.0
+```
+
+Pour revenir à la version précédente, réutiliser son tag d'image, sans reconstruire :
+
+```powershell
+$env:DROPZONE_VERSION = "0.4.0"
+docker compose -f compose.prod.yml pull api front
+docker compose -f compose.prod.yml up -d --no-build --force-recreate
+docker compose -f compose.prod.yml ps
+```
+
+Le rollback remplace les conteneurs par les anciennes images déjà publiées. Le volume PostgreSQL reste conservé : les données et les éventuelles évolutions de schéma ne sont pas annulées automatiquement. Une migration de base incompatible nécessite une procédure de restauration ou une migration corrective distincte.
+
 ## Documentation de l'API
 
 Le backend expose une API REST.
@@ -371,13 +438,13 @@ Le TP vise à faire évoluer le projet vers une chaîne DevOps complète.
 
 | Étape | Objectif | État |
 |---|---|---|
-| 1. Gestion du dépôt | Documentation, conventions Git, protection de `main`, versionnement | À réaliser |
-| 2. Conteneurisation | Dockerfiles backend et frontend, PostgreSQL et Compose | À réaliser |
-| 3. Intégration continue | GitHub Actions : lint, tests et E2E | À réaliser |
-| 4. Déploiement continu | Publication des images sur GHCR et déploiement | À réaliser |
+| 1. Gestion du dépôt | Documentation, conventions Git, protection de `main`, versionnement | Terminé |
+| 2. Conteneurisation | Dockerfiles backend et frontend, PostgreSQL et Compose | Terminé |
+| 3. Intégration continue | GitHub Actions : lint, tests et E2E | Terminé |
+| 4. Déploiement continu | Publication des images sur GHCR et déploiement | En cours |
 | 5. Supervision | Health checks, logs structurés, métriques et Uptime Kuma | À réaliser |
 
-Les éléments de cette roadmap correspondent aux objectifs du TP ; ils ne sont pas présentés comme déjà déployés.
+Les états de cette roadmap sont mis à jour au fur et à mesure de la réalisation du TP.
 
 ## Licence
 
