@@ -4,6 +4,8 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages hosts this repository below /DropZone-EXO/ rather than at /.
+  base: process.env.VITE_BASE_PATH ?? '/',
   plugins: [react()],
   server: {
     // In development, /api is forwarded to the API (same path as behind nginx in Docker).

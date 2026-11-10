@@ -1,10 +1,10 @@
-import { BrowserRouter, Link, Route, Routes } from 'react-router'
+import { BrowserRouter, HashRouter, Link, Route, Routes } from 'react-router'
 import { DropDetailPage } from './pages/DropDetailPage'
 import { DropListPage } from './pages/DropListPage'
 
-export function App() {
+function AppContent() {
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <>
       <header className="topbar">
         <Link to="/" className="logo">
           Drop<span>Zone</span>
@@ -18,6 +18,22 @@ export function App() {
           <Route path="*" element={<p>Page introuvable.</p>} />
         </Routes>
       </main>
+    </>
+  )
+}
+
+export function App() {
+  const basename = import.meta.env.BASE_URL
+  if (import.meta.env.VITE_ROUTER_MODE === 'hash') {
+    return (
+      <HashRouter basename={basename}>
+        <AppContent />
+      </HashRouter>
+    )
+  }
+  return (
+    <BrowserRouter basename={basename}>
+      <AppContent />
     </BrowserRouter>
   )
 }
