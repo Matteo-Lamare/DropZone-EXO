@@ -93,7 +93,6 @@ jobs:
       - name: Build frontend for GitHub Pages
         working-directory: frontend
         env:
-          VITE_BASE_PATH: /DropZone-EXO/
           VITE_ROUTER_MODE: hash
           VITE_API_URL: ${{ vars.PUBLIC_API_URL }}
         run: npm run build
