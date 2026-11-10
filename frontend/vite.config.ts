@@ -2,10 +2,17 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+const repository = process.env.GITHUB_REPOSITORY
+const basePath =
+  process.env.VITE_BASE_PATH ??
+  (repository ? `/${repository.split('/')[1]}/` : '/')
+
 // https://vite.dev/config/
 export default defineConfig({
-  // GitHub Pages hosts this repository below /DropZone-EXO/ rather than at /.
-  base: process.env.VITE_BASE_PATH ?? '/',
+  // GitHub Pages serves project sites below /<repository-name>/.
+  // GITHUB_REPOSITORY is provided automatically by GitHub Actions.
+  // Locally, the default base remains /.
+  base: basePath,
   plugins: [react()],
   server: {
     // In development, /api is forwarded to the API (same path as behind nginx in Docker).
