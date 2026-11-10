@@ -121,7 +121,7 @@ git push origin v1.0.0
 4. Vérifiez que les deux versions d'images sont disponibles.
 5. Revenez à la première version en modifiant `DROPZONE_VERSION`, puis en recréant les conteneurs sans reconstruire les images.
 
-Exemple sous Windows PowerShell :
+Exemple sous Windows PowerShell (première version `1.0.0`, puis seconde version `1.1.0`) :
 
 ```powershell
 $env:DROPZONE_VERSION = "1.0.0"
@@ -129,7 +129,7 @@ docker compose -f compose.prod.yml pull
 docker compose -f compose.prod.yml up -d
 
 # Pour revenir à la version précédente :
-$env:DROPZONE_VERSION = "0.9.0"
+$env:DROPZONE_VERSION = "1.0.0"
 docker compose -f compose.prod.yml pull
 docker compose -f compose.prod.yml up -d --no-build --force-recreate
 docker compose -f compose.prod.yml ps
