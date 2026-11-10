@@ -324,6 +324,38 @@ docker compose -f compose.prod.yml ps
 
 Le rollback remplace les conteneurs par les anciennes images déjà publiées. Le volume PostgreSQL reste conservé : les données et les éventuelles évolutions de schéma ne sont pas annulées automatiquement. Une migration de base incompatible nécessite une procédure de restauration ou une migration corrective distincte.
 
+
+### Questions de compréhension — CD
+
+**1. Pourquoi le CD ne relance-t-il pas les tests ?**
+
+Le workflow CD se concentre sur la livraison : il publie les artefacts d'un commit déjà contrôlé par la CI. Les tests sont exécutés lors des pushes et des pull requests vers `main`. Pour garantir qu'un tag pointe vers un commit sain, il faut fusionner dans `main` uniquement après le succès des contrôles requis et poser le tag sur ce commit validé. Cette garantie dépend de la configuration effective des règles de protection de `main` et des status checks obligatoires ; le simple fait de déclencher le CD par un tag ne garantit pas, à lui seul, que les tests ont réussi.
+
+**2. Quels droits chaque job utilise-t-il ? Pourquoi les définir job par job ?**
+
+Le workflow commence avec `permissions: {}` (aucun droit implicite), puis accorde uniquement les permissions nécessaires :
+- `publish-images` : `contents: read` pour récupérer le code et `packages: write` pour publier les images sur GHCR.
+- `deploy-pages` : `contents: read` pour récupérer le frontend, `pages: write` pour publier le site et `id-token: write` pour obtenir le jeton OIDC utilisé par le déploiement Pages.
+- `create-release` : `contents: write` pour créer la Release GitHub.
+
+Cette séparation applique le principe du moindre privilège : si un job ou une action est compromis, ses permissions limitées réduisent les actions possibles.
+
+**3. Faut-il créer un mot de passe pour pousser sur GHCR depuis GitHub Actions ?**
+
+Non. Le workflow se connecte à GHCR avec le jeton temporaire `GITHUB_TOKEN`, fourni par GitHub Actions. Le job de publication reçoit `packages: write`, ce qui lui permet de publier les images dans le registre associé au dépôt. Il n'est donc pas nécessaire de créer un Personal Access Token pour ce workflow.
+
+**4. Quelles conséquences du sous-chemin GitHub Pages ?**
+
+Le site est servi sous `/DropZone-EXO/`, et non à la racine du domaine. Vite doit donc construire les chemins des ressources (JavaScript, CSS, favicon) avec cette base. Le projet calcule cette base à partir du nom du dépôt dans la configuration Vite. Pour les routes applicatives, le frontend utilise `HashRouter` : une URL comme `/#/drops/3` conserve le chemin du site et place la route après le fragment `#`. Le navigateur peut ainsi recharger cette URL sans demander à GitHub Pages de servir directement un chemin inexistant comme `/drops/3`.
+
+**5. Comment le frontend connaît-il l'adresse de l'API sur Pages ?**
+
+GitHub Pages ne fournit pas de proxy Nginx pour rediriger `/api` vers le backend. L'adresse publique de l'API est donc injectée au moment de la compilation dans `VITE_API_URL`, à partir de la variable de dépôt `PUBLIC_API_URL`. Le backend doit autoriser l'origine `https://matteo-lamare.github.io` dans sa configuration CORS. Si `PUBLIC_API_URL` n'est pas renseignée, le frontend affiche le message indiquant qu'aucune URL d'API publique n'est configurée et ne peut pas charger les drops.
+
+**6. Que restaure un rollback ?**
+
+Le rollback réutilise une image Docker déjà publiée avec le tag de la version précédente ; il ne reconstruit pas l'ancienne version. On change `DROPZONE_VERSION`, on récupère les images correspondantes et on recrée les conteneurs. En revanche, le rollback applicatif ne restaure ni les données persistées dans le volume PostgreSQL, ni automatiquement le schéma de la base. Une migration de schéma incompatible nécessite une stratégie distincte (migration réversible, migration corrective ou restauration d'une sauvegarde).
+
 ## Documentation de l'API
 
 Le backend expose une API REST.
