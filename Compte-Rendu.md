@@ -110,3 +110,35 @@ Le versionnage sémantique suit le format `MAJOR.MINOR.PATCH`.
 ### 7. Qu'est-ce qu'act ne sait pas reproduire de GitHub ?
 
   act permet de tester les workflows localement, mais ne reproduit pas totalement GitHub : les secrets, les permissions, les runners et les règles de protection des branches peuvent être différents.
+
+
+## Partie 4
+
+### 1. Pourquoi le CD ne relance-t-il pas les tests ? Qu'est-ce qui garantit que le commit tagué est sain ?
+
+Le CD publie un commit déjà validé par la CI. Le tag doit être posé sur un commit de `main`, après fusion d'une Pull Request dont les vérifications obligatoires ont réussi. La protection de `main` et les status checks requis constituent donc la garantie. Il ne faut pas taguer directement un commit non testé ou une branche de fonctionnalité.
+
+### 2. De quels droits chaque job a-t-il besoin ? Pourquoi les attribuer job par job ?
+
+Les permissions sont limitées au strict nécessaire :
+- Publication GHCR : `contents: read` et `packages: write`.
+- Déploiement GitHub Pages : `contents: read`, `pages: write` et `id-token: write`.
+- Création de la Release : `contents: write`.
+
+Les attribuer job par job réduit les privilèges disponibles si une action ou un job est compromis. Le workflow entier démarre avec `permissions: {}`.
+
+### 3. Faut-il créer un mot de passe pour pousser sur GHCR depuis GitHub Actions ?
+
+Non. L'action se connecte à GHCR avec le `GITHUB_TOKEN` fourni par GitHub Actions. Le job de publication reçoit le droit `packages: write`, et le token est utilisé par `docker/login-action`. Aucun PAT ni mot de passe personnel n'est nécessaire.
+
+### 4. Quelle conséquence du sous-chemin GitHub Pages pour les fichiers et les routes ?
+
+Le site est servi sous `/DropZone-EXO/`, pas à la racine du domaine. Vite doit donc compiler les ressources avec `base: /DropZone-EXO/`. Une route BrowserRouter comme `/drops/3` rechargée directement peut renvoyer une 404, car Pages ne sait pas faire de fallback vers `index.html`. Pour ce build, HashRouter utilise une URL comme `/#/drops/3`, dont le fragment est traité côté navigateur.
+
+### 5. Comment le front connaît-il l'API sur Pages ? Que montre-t-il sans API publique ?
+
+Le workflow lit la variable de dépôt `PUBLIC_API_URL` au moment du build et la transmet à Vite via `VITE_API_URL`. L'URL doit être publique et l'API doit autoriser l'origine du site Pages dans sa configuration CORS. Si la variable n'est pas renseignée, le frontend affiche explicitement que l'API est injoignable et qu'aucune URL publique n'est configurée. Les appels API ne peuvent pas passer par le proxy Nginx de la stack Docker, car Pages héberge uniquement les fichiers statiques.
+
+### 6. Un rollback reconstruit-il l'ancienne version ? Qu'est-ce qui ne revient pas en arrière ?
+
+Non. Le rollback réutilise les images déjà publiées avec l'ancien tag, par exemple `0.4.0`, puis recrée les conteneurs avec `docker compose up --no-build`. Aucun build n'est nécessaire. En revanche, le volume PostgreSQL et ses données persistent. Une évolution du schéma de base ou des données n'est pas annulée par le retour à une ancienne image : il faut prévoir une restauration ou une migration corrective séparée.
