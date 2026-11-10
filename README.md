@@ -27,6 +27,7 @@
   - [Configuration](#configuration)
     - [Exemple avec PostgreSQL](#exemple-avec-postgresql)
   - [Tests et qualité du code](#tests-et-qualité-du-code)
+  - [Déploiement continu](#déploiement-continu)
     - [Backend](#backend)
     - [Frontend](#frontend)
     - [Tests end-to-end](#tests-end-to-end)
@@ -294,7 +295,7 @@ DROPZONE_VERSION=0.4.0 docker compose -f compose.prod.yml up -d
 docker compose -f compose.prod.yml ps
 ```
 
-L'interface locale est disponible sur `http://localhost:8080`. Les identifiants PostgreSQL peuvent être personnalisés avec les variables Compose documentées dans `compose.prod.yml` ; ne pas utiliser les valeurs par défaut en production.
+L'interface locale est disponible sur `http://localhost:8080`. Les identifiants PostgreSQL peuvent être personnalisés avec `POSTGRES_USER`, `POSTGRES_PASSWORD` et un `DATABASE_URL` cohérent avec ces valeurs ; ne pas utiliser les valeurs par défaut en production.
 
 ### Publier une version et effectuer un rollback
 
