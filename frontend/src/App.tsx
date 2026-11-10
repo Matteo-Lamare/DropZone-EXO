@@ -23,16 +23,18 @@ function AppContent() {
 }
 
 export function App() {
-  const basename = import.meta.env.BASE_URL
   if (import.meta.env.VITE_ROUTER_MODE === 'hash') {
+    // HashRouter reads routes from the URL fragment; the pathname basename
+    // belongs to Vite's asset URLs, not to the router.
     return (
-      <HashRouter basename={basename}>
+      <HashRouter>
         <AppContent />
       </HashRouter>
     )
   }
+
   return (
-    <BrowserRouter basename={basename}>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AppContent />
     </BrowserRouter>
   )
