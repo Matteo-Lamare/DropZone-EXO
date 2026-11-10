@@ -18,7 +18,8 @@ export interface Order {
   drop: Drop
 }
 
-const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
+// An empty value is intentional for GitHub Pages when no public API is configured.
+const API_URL = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '')
 
 export class ApiError extends Error {
   readonly status: number
@@ -30,9 +31,13 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!API_URL) {
+    throw new ApiError(0, "L'API est injoignable : aucune URL d'API publique n'est configurée.")
+  }
+
   let response: Response
   try {
-    response = await fetch(`${API_URL}${path}`, init)
+    response = await fetch(${API_URL}${path}, init)
   } catch {
     throw new ApiError(0, "L'API est injoignable. Réessayez dans quelques instants.")
   }
